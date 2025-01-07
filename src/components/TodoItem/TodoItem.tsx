@@ -1,7 +1,8 @@
 import classNames from 'classnames';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Todo } from '../../types/Todo';
+import { updateTodo } from '../../api/todos';
 
 type TodoItemProps = {
   onDeleteTodo: (id: number) => void;
@@ -11,12 +12,11 @@ type TodoItemProps = {
   cleanCompleted: boolean;
   isAdding?: boolean;
   onUpdateTodo: (id: number) => void;
-  isUpdating?: null | number;
-  itemEditingId?: null | number;
-  onItemEditingId: (id: number | null) => void;
-  newTitle: string;
-  onSetNewTitle: (title: string) => void;
-  onUpdateNewTitle: (id: number, title: string) => void;
+  isUpdating?: number[] | null;
+  setIsUpdating: React.Dispatch<React.SetStateAction<number[] | null>>;
+  setErrorMessage: React.Dispatch<React.SetStateAction<string | null>>;
+  setTodos: React.Dispatch<React.SetStateAction<Todo[]>>;
+  setDeleteTodoId: React.Dispatch<React.SetStateAction<number | null>>;
 };
 
 export function TodoItem({
@@ -28,27 +28,64 @@ export function TodoItem({
   isAdding,
   onUpdateTodo,
   isUpdating,
-  itemEditingId,
-  onItemEditingId,
-  newTitle,
-  onSetNewTitle,
-  onUpdateNewTitle,
+  setIsUpdating,
+  setErrorMessage,
+  setTodos,
+  setDeleteTodoId,
 }: TodoItemProps) {
+  const [itemEditingId, setItemEditingId] = useState<number | null>(null);
+  const [newTitle, setNewTitle] = useState<string>('');
+
   const inputRef = useRef<HTMLInputElement>(null);
+
+  function handleUpadateNewTitle(id: number, title: string) {
+    if (todo?.title === title) {
+      setItemEditingId(null);
+      setNewTitle('');
+
+      return;
+    }
+
+    if (title) {
+      setIsUpdating([id]);
+      setErrorMessage(null);
+
+      const updatedTitle = { title: title.trim() };
+
+      updateTodo(id, updatedTitle)
+        .then(() => {
+          setTodos(currentTodos =>
+            currentTodos.map(item =>
+              item.id === id ? { ...item, title: updatedTitle.title } : item,
+            ),
+          );
+        })
+        .catch(() => {
+          setErrorMessage('Unable to update a todo');
+        })
+        .finally(() => {
+          setIsUpdating(null);
+        });
+    }
+
+    if (title.trim() === '') {
+      setDeleteTodoId(id);
+    }
+  }
 
   function handleCancel(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Escape') {
-      onItemEditingId(null);
-      onSetNewTitle(todo.title);
+      setItemEditingId(null);
+      setNewTitle(todo.title);
     }
   }
 
   useEffect(() => {
     if (itemEditingId === todo.id && inputRef.current) {
       inputRef.current.focus();
-      onSetNewTitle(todo.title);
+      setNewTitle(todo.title);
     }
-  }, [itemEditingId, todo.id]);
+  }, [itemEditingId, todo.id, todo.title]);
 
   return (
     <div
@@ -72,7 +109,7 @@ export function TodoItem({
           <span
             data-cy="TodoTitle"
             className="todo__title"
-            onDoubleClick={() => onItemEditingId(todo.id)}
+            onDoubleClick={() => setItemEditingId(todo.id)}
           >
             {todo.title}
           </span>
@@ -95,7 +132,7 @@ export function TodoItem({
         <form
           onSubmit={e => {
             e.preventDefault();
-            onUpdateNewTitle(todo.id, newTitle);
+            handleUpadateNewTitle(todo.id, newTitle);
           }}
         >
           <input
@@ -105,10 +142,10 @@ export function TodoItem({
             placeholder="Empty todo will be deleted"
             value={newTitle}
             ref={inputRef}
-            onChange={e => onSetNewTitle(e.target.value)}
+            onChange={e => setNewTitle(e.target.value)}
             onBlur={() => {
-              onItemEditingId(null);
-              onUpdateNewTitle(todo.id, newTitle);
+              setItemEditingId(null);
+              handleUpadateNewTitle(todo.id, newTitle);
             }}
             onKeyUp={handleCancel}
           />
@@ -123,7 +160,7 @@ export function TodoItem({
             (isLoadingChange && deleteTodoId === todo.id) ||
             (cleanCompleted && todo.completed) ||
             isAdding ||
-            isUpdating === todo.id,
+            isUpdating?.includes(todo.id),
         })}
         key={todo.id}
       >

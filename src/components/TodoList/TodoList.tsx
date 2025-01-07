@@ -9,12 +9,11 @@ type TodoListProps = {
   cleanCompleted: boolean;
   tempTodo: Todo | null;
   onUpdateTodo: (id: number) => void;
-  isUpdating: null | number;
-  itemEditingId: null | number;
-  onItemEditingId: (id: number | null) => void;
-  newTitle: string;
-  onSetNewTitle: (title: string) => void;
-  onUpdateNewTitle: (id: number, title: string) => void;
+  isUpdating: number[] | null;
+  setIsUpdating: React.Dispatch<React.SetStateAction<number[] | null>>;
+  setErrorMessage: React.Dispatch<React.SetStateAction<string | null>>;
+  setTodos: React.Dispatch<React.SetStateAction<Todo[]>>;
+  setDeleteTodoId: React.Dispatch<React.SetStateAction<number | null>>;
 };
 
 export function TodoList({
@@ -26,11 +25,10 @@ export function TodoList({
   tempTodo,
   onUpdateTodo,
   isUpdating,
-  itemEditingId,
-  onItemEditingId,
-  newTitle,
-  onSetNewTitle,
-  onUpdateNewTitle,
+  setIsUpdating,
+  setErrorMessage,
+  setTodos,
+  setDeleteTodoId,
 }: TodoListProps) {
   return (
     <section className="todoapp__main" data-cy="TodoList">
@@ -44,11 +42,10 @@ export function TodoList({
           cleanCompleted={cleanCompleted}
           onUpdateTodo={onUpdateTodo}
           isUpdating={isUpdating}
-          itemEditingId={itemEditingId}
-          onItemEditingId={onItemEditingId}
-          newTitle={newTitle}
-          onSetNewTitle={onSetNewTitle}
-          onUpdateNewTitle={onUpdateNewTitle}
+          setIsUpdating={setIsUpdating}
+          setErrorMessage={setErrorMessage}
+          setTodos={setTodos}
+          setDeleteTodoId={setDeleteTodoId}
         />
       ))}
 
@@ -62,11 +59,10 @@ export function TodoList({
           cleanCompleted={cleanCompleted}
           onUpdateTodo={onUpdateTodo}
           isAdding={TodoItem !== null}
-          itemEditingId={itemEditingId}
-          onItemEditingId={onItemEditingId}
-          newTitle={newTitle}
-          onSetNewTitle={onSetNewTitle}
-          onUpdateNewTitle={onUpdateNewTitle}
+          setIsUpdating={setIsUpdating}
+          setErrorMessage={setErrorMessage}
+          setTodos={setTodos}
+          setDeleteTodoId={setDeleteTodoId}
         />
       )}
     </section>

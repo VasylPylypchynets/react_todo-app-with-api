@@ -1,10 +1,11 @@
 import classNames from 'classnames';
+import { SortBy } from '../../App';
 
 type FooterProps = {
   itemsLeft: number;
   sortBy: string;
-  onSortBy: (sort: string) => void;
-  onCleanCompleted: () => void;
+  onSortBy: (sort: SortBy) => void;
+  onCleanCompleted: (clean: boolean) => void;
   todosLength: number;
 };
 
@@ -24,11 +25,13 @@ export function Footer({
       <nav className="filter" data-cy="Filter">
         <a
           href="#/"
-          className={classNames('filter__link', { selected: sortBy === 'all' })}
+          className={classNames('filter__link', {
+            selected: sortBy === SortBy.All,
+          })}
           data-cy="FilterLinkAll"
           onClick={e => {
             e.preventDefault();
-            onSortBy('all');
+            onSortBy(SortBy.All);
           }}
         >
           All
@@ -37,12 +40,12 @@ export function Footer({
         <a
           href="#/active"
           className={classNames('filter__link', {
-            selected: sortBy === 'active',
+            selected: sortBy === SortBy.Active,
           })}
           data-cy="FilterLinkActive"
           onClick={e => {
             e.preventDefault();
-            onSortBy('active');
+            onSortBy(SortBy.Active);
           }}
         >
           Active
@@ -51,12 +54,12 @@ export function Footer({
         <a
           href="#/completed"
           className={classNames('filter__link', {
-            selected: sortBy === 'completed',
+            selected: sortBy === SortBy.Completed,
           })}
           data-cy="FilterLinkCompleted"
           onClick={e => {
             e.preventDefault();
-            onSortBy('completed');
+            onSortBy(SortBy.Completed);
           }}
         >
           Completed
@@ -68,7 +71,7 @@ export function Footer({
         className="todoapp__clear-completed"
         data-cy="ClearCompletedButton"
         disabled={todosLength !== itemsLeft ? false : true}
-        onClick={onCleanCompleted}
+        onClick={() => onCleanCompleted(true)}
       >
         Clear completed
       </button>
