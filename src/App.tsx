@@ -294,6 +294,7 @@ export const App: React.FC = () => {
           setErrorMessage('Unable to delete a todo');
         } finally {
           setIsLoadingChange(false);
+          setDeleteTodoId(null);
         }
       }
     }
