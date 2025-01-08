@@ -119,49 +119,48 @@ export const App: React.FC = () => {
       const updatedStatus = { completed: true };
 
       const updateTodos = async () => {
-        const updatedTodos: Promise<number | null>[] = todos.map(async todo => {
+        const updatedTodos = todos.map(async todo => {
           if (!todo.completed) {
-            setIsUpdating(prev => {
-              if (prev === null) {
-                return [todo.id];
-              } else {
-                return [...prev, todo.id];
-              }
-            });
+            setIsUpdating(prev =>
+              prev === null ? [todo.id] : [...prev, todo.id],
+            );
             setErrorMessage(null);
 
             try {
               await updateTodo(todo.id, updatedStatus);
 
-              return todo.id;
+              return { id: todo.id, status: 'fulfilled' };
             } catch {
               setErrorMessage('Unable to update a todo');
 
-              return null;
+              return { id: todo.id, status: 'rejected' };
             }
           }
 
-          return null;
+          return { id: todo.id, status: 'skipped' };
         });
 
-        const updatedTodo = await Promise.all(updatedTodos);
+        const results = await Promise.allSettled(updatedTodos);
 
-        const successfulUpdated = updatedTodo.filter(
-          id => id !== null,
-        ) as number[];
+        const successfulUpdated = results
+          .filter(
+            result =>
+              result.status === 'fulfilled' &&
+              result.value.status === 'fulfilled',
+          )
+          .map(
+            result =>
+              (result as PromiseFulfilledResult<{ id: number; status: string }>)
+                .value.id,
+          );
 
-        setTodos(currentTodos => {
-          return currentTodos.map(todo => {
-            if (successfulUpdated.includes(todo.id)) {
-              return {
-                ...todo,
-                completed: true,
-              };
-            } else {
-              return todo;
-            }
-          });
-        });
+        setTodos(currentTodos =>
+          currentTodos.map(todo =>
+            successfulUpdated.includes(todo.id)
+              ? { ...todo, completed: true }
+              : todo,
+          ),
+        );
 
         setIsUpdating(null);
       };
@@ -173,45 +172,45 @@ export const App: React.FC = () => {
       const updatedStatus = { completed: false };
 
       const updateTodos = async () => {
-        const updatedTodos: Promise<number | null>[] = todos.map(async todo => {
-          setIsUpdating(prev => {
-            if (prev === null) {
-              return [todo.id];
-            } else {
-              return [...prev, todo.id];
-            }
-          });
+        const updatedTodos = todos.map(async todo => {
+          setIsUpdating(prev =>
+            prev === null ? [todo.id] : [...prev, todo.id],
+          );
           setErrorMessage(null);
 
           try {
             await updateTodo(todo.id, updatedStatus);
 
-            return todo.id;
+            return { id: todo.id, status: 'fulfilled' };
           } catch {
             setErrorMessage('Unable to update a todo');
 
-            return null;
+            return { id: todo.id, status: 'rejected' };
           }
         });
 
-        const updatedTodo = await Promise.all(updatedTodos);
+        const results = await Promise.allSettled(updatedTodos);
 
-        const successfulUpdated = updatedTodo.filter(
-          id => id !== null,
-        ) as number[];
+        const successfulUpdated = results
+          .filter(
+            result =>
+              result.status === 'fulfilled' &&
+              result.value.status === 'fulfilled',
+          )
+          .map(
+            result =>
+              (result as PromiseFulfilledResult<{ id: number; status: string }>)
+                .value.id,
+          );
 
-        setTodos(currentTodos => {
-          return currentTodos.map(todo => {
-            if (successfulUpdated.includes(todo.id)) {
-              return {
-                ...todo,
-                completed: false,
-              };
-            } else {
-              return todo;
-            }
-          });
-        });
+        setTodos(currentTodos =>
+          currentTodos.map(todo =>
+            successfulUpdated.includes(todo.id)
+              ? { ...todo, completed: false }
+              : todo,
+          ),
+        );
+
         setIsUpdating(null);
       };
 
@@ -234,10 +233,10 @@ export const App: React.FC = () => {
   }
 
   useEffect(() => {
-    if (inputRef.current || (errorMessage && inputRef.current)) {
+    if (tempTodo === null && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [query, errorMessage, todos]);
+  }, [tempTodo, todos.length]);
 
   useEffect(() => {
     if (newTask.trim() !== '') {
@@ -247,7 +246,9 @@ export const App: React.FC = () => {
         completed: false,
       };
 
-      setTempTodo({ id: 0, ...todo });
+      if (sortBy !== SortBy.Completed) {
+        setTempTodo({ id: 0, ...todo });
+      }
 
       addTodo(todo)
         .then(receivedTodo => {
@@ -257,10 +258,6 @@ export const App: React.FC = () => {
         })
         .catch(() => {
           setErrorMessage('Unable to add a todo');
-
-          if (inputRef.current) {
-            inputRef.current.focus();
-          }
         })
         .finally(() => {
           setTempTodo(null);
@@ -270,7 +267,7 @@ export const App: React.FC = () => {
     } else {
       setIsSubmiting(false);
     }
-  }, [newTask]);
+  }, [newTask, sortBy]);
 
   useEffect(() => {
     let timerEmpty: NodeJS.Timeout;
@@ -320,19 +317,26 @@ export const App: React.FC = () => {
           try {
             await deleteTodo(todo.id);
 
-            return todo.id;
+            return { id: todo.id, status: 'fulfilled' };
           } catch (error) {
             setErrorMessage('Unable to delete a todo');
 
-            return null;
+            return { id: todo.id, status: 'rejected' };
           }
         });
 
-        const resolvedDeletions = await Promise.all(deletionPromises);
+        const resolvedDeletions = await Promise.allSettled(deletionPromises);
 
-        const successfulDeletions = resolvedDeletions.filter(
-          id => id !== null,
-        ) as number[];
+        const successfulDeletions = resolvedDeletions
+          .filter(
+            date =>
+              date.status === 'fulfilled' && date.value.status === 'fulfilled',
+          )
+          .map(
+            date =>
+              (date as PromiseFulfilledResult<{ id: number; status: string }>)
+                .value.id,
+          );
 
         setTodos(prevTodos =>
           prevTodos.filter(todo => !successfulDeletions.includes(todo.id)),

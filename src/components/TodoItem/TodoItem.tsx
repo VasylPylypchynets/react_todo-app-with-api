@@ -36,18 +36,27 @@ export function TodoItem({
   const [itemEditingId, setItemEditingId] = useState<number | null>(null);
   const [newTitle, setNewTitle] = useState<string>('');
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   function handleUpadateNewTitle(id: number, title: string) {
     if (todo?.title === title) {
       setItemEditingId(null);
-      setNewTitle('');
+
+      return;
+    }
+
+    if (title.trim() === '') {
+      setDeleteTodoId(id);
+      setIsUpdating([id]);
 
       return;
     }
 
     if (title) {
-      setIsUpdating([id]);
+      if (!isUpdating) {
+        setIsUpdating([id]);
+      }
+
       setErrorMessage(null);
 
       const updatedTitle = { title: title.trim() };
@@ -59,17 +68,18 @@ export function TodoItem({
               item.id === id ? { ...item, title: updatedTitle.title } : item,
             ),
           );
+
+          setItemEditingId(null);
         })
         .catch(() => {
           setErrorMessage('Unable to update a todo');
+          setItemEditingId(id);
+          setNewTitle(title);
+          inputRef.current?.focus();
         })
         .finally(() => {
           setIsUpdating(null);
         });
-    }
-
-    if (title.trim() === '') {
-      setDeleteTodoId(id);
     }
   }
 
@@ -144,7 +154,6 @@ export function TodoItem({
             ref={inputRef}
             onChange={e => setNewTitle(e.target.value)}
             onBlur={() => {
-              setItemEditingId(null);
               handleUpadateNewTitle(todo.id, newTitle);
             }}
             onKeyUp={handleCancel}
