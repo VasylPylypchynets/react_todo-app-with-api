@@ -31,8 +31,7 @@ export function Footer({
               selected: sortBy === filter,
             })}
             data-cy={`FilterLink${filter.charAt(0).toUpperCase() + filter.slice(1)}`}
-            onClick={e => {
-              e.preventDefault();
+            onClick={() => {
               onSortBy(filter);
             }}
           >
